@@ -24,3 +24,9 @@
 
 - **绝对不要**把令牌明文写入仓库文件、issue、PR、评论或命令输出——本仓库是公开的；
 - 只允许记录指针位置（即本文件），令牌值只存在于用户环境变量中。
+
+## Cloud Agent 开发
+
+- 安装与验证命令以 README「开发与验证」为准：`pnpm install --frozen-lockfile`（pnpm **11.21.0**，与 `install.ps1` 的 `$PnpmVersion` 一致），然后 `node test/verify.mjs`。产物门禁是 `node scripts/build.mjs` 之后 `git diff --exit-code lib/client.js`。
+- `test/verify.mjs` 调用 `zlib.zstdCompressSync`，需要 **Node.js ≥ 22.15**。Cloud Agent 镜像里的 `/exec-daemon/node`（22.14.0）没有该 API，回归会在历史回填处失败。环境把 `~/.nvm/versions/node/v22.23.3/bin` 放在 PATH 前面；`node -v` 应显示 v22.23.3。
+- 本仓库没有必须常驻的开发服务器。本地余额模拟是 `node test/mock-balance.mjs`，监听 `127.0.0.1:3101` 的 `GET /user/balance`。
