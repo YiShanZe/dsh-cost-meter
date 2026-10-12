@@ -2151,7 +2151,7 @@
             el('label', null, t('languageLabel')),
             el('select', {
               className: 'cm-input',
-              value: draft?.locale ?? 'auto',
+              value: draft?.locale ?? 'zh',
               onChange: event => setField('locale', event.target.value),
             },
               el('option', { value: 'auto' }, t('localeAuto')),

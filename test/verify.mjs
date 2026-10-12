@@ -754,6 +754,34 @@ assert.equal(Ledger.open().config.codingPlans.minimax.display, 'settings', '标�
 process.env.DSH_HOME = join(tmpdir(), 'dsh-cost-meter-test-home')
 console.log('[ok] 一次性配置迁移(MiniMax 侧边栏 display/标记幂等/用户选择优先)通过')
 
+// 4.4) 默认界面语言改为简体中文:旧账本 locale=auto/缺失一次性迁到 zh;显式 en 保留;
+// 用户事后改回 auto 因标记已在而不再翻转。
+{
+  const localeHome = join(tmpdir(), 'dsh-cost-meter-test-locale-home')
+  rmSync(localeHome, { recursive: true, force: true })
+  process.env.DSH_HOME = localeHome
+  const localePath = join(localeHome, 'storages', 'cost-meter', 'ledger.json')
+  mkdirSync(join(localeHome, 'storages', 'cost-meter'), { recursive: true })
+  writeFileSync(localePath, JSON.stringify({ version: 1, config: { locale: 'auto' }, days: {} }), 'utf8')
+  const localeLedger = Ledger.open()
+  assert.equal(localeLedger.config.locale, 'zh', '旧默认 auto 迁移为简体中文')
+  assert.ok(localeLedger.migrations.includes('v1.7.16-locale-default-zh'), 'locale 迁移标记写入账本')
+  writeFileSync(localePath, JSON.stringify({ version: 1, config: {}, days: {} }), 'utf8')
+  assert.equal(Ledger.open().config.locale, 'zh', '缺失 locale 的旧账本补齐为简体中文')
+  writeFileSync(localePath, JSON.stringify({ version: 1, config: { locale: 'en' }, days: {} }), 'utf8')
+  const enLedger = Ledger.open()
+  assert.equal(enLedger.config.locale, 'en', '显式 English 不被迁移覆盖')
+  assert.ok(enLedger.migrations.includes('v1.7.16-locale-default-zh'), 'en 账本仍记下迁移标记以免日后误伤')
+  const autoChoice = applyConfigPatch(enLedger.config, { locale: 'auto' })
+  assert.equal(autoChoice.errors.length, 0, '迁移后仍可显式改回跟随浏览器')
+  enLedger.config = autoChoice.config
+  enLedger.account({ input: 1, output: 1, cacheRead: 0, cacheWrite: 0 }, 'deepseek-v4-flash', 'locale-session', Date.now())
+  enLedger.flush()
+  assert.equal(Ledger.open().config.locale, 'auto', '用户显式选择 auto 被尊重(标记防止重复迁移)')
+  process.env.DSH_HOME = join(tmpdir(), 'dsh-cost-meter-test-home')
+  console.log('[ok] 一次性配置迁移(默认界面语言简体中文/标记幂等/用户选择优先)通过')
+}
+
 // 5) Coding plan 额度 adapter:归一化/各家解析器/软失败/配置清洗/清单。
 // 5.1) 归一化。
 assert.equal(normalizePercent(0.5), 50, '0-1 小数按百分数归一')
@@ -1753,7 +1781,7 @@ const dirty = sanitizeConfig({
   codingPlans: { anthropic: { enabled: true, display: 'dock', refreshMinutes: 0, apiKey: 5 } },
   corner: { enabled: 'x' },
 })
-assert.equal(dirty.locale, 'auto', '非法 locale 回落')
+assert.equal(dirty.locale, 'zh', '非法 locale 回落简体中文')
 assert.equal(dirty.position, 'dock', '非法 position 回落')
 assert.equal(typeof dirty.decimals, 'number', '非法 decimals 回落为数字')
 assert.equal(dirty.exchangeRate, 7.2, '非法汇率回落默认')

@@ -126,7 +126,7 @@
         for (const id of Object.keys(v.prices.models)) models[id] = parsePrice(v.prices.models[id], path + '.prices.models.' + id)
       }
       return {
-        locale: v.locale === 'zh' || v.locale === 'en' || v.locale === 'auto' ? v.locale : 'auto',
+        locale: v.locale === 'zh' || v.locale === 'en' || v.locale === 'auto' ? v.locale : 'zh',
         position: v.position === 'header' || v.position === 'off' ? v.position : 'dock',
         sidebar: v.sidebar !== false,
         // showSessionId 曾遗漏于本白名单:checkbox 能保存但读侧恒 undefined,
